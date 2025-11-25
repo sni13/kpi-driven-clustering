@@ -59,24 +59,21 @@ A full written publication and technical report will be added here upon completi
 
 ## 📂 Repository Structure  
 
+```text
 root/
-│
 ├── act1_natural_segmentation.ipynb
-│ └─ Unsupervised clustering (Ward, K-Medoids, K-Means)
-│
+│   └── Unsupervised clustering (Ward, K-Medoids, K-Means)
 ├── act2_semi_supervised_segmentation.ipynb
-│ └─ Semi-supervised signals & cluster stabilization
-│
+│   └── Semi-supervised signals & cluster stabilization
 ├── act3_dynamic_tiering.ipynb
-│ └─ KPI-driven ranking (Policy v2) & optional optimization
-│
+│   └── KPI-driven ranking (Policy v2) & optional optimization
 ├── UCLA_Microsoft_Data.xlsx
-│ └─ Hypothesized dataset for academic research
-│
+│   └── Hypothesized dataset for academic research
 └── docs/
-├── publication_draft/ (placeholder)
-├── figures/
-└── slides/
+    ├── publication_draft/   (placeholder)
+    ├── figures/
+    └── slides/
+
 
 
 
@@ -126,4 +123,4 @@ No real customer or proprietary Microsoft data is included.
 ## 🏢 Contact  
 
 For questions or collaboration:  
-**sailingni@ucla.edu**
+**sailing13@ucla.edu**
