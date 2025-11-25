@@ -73,9 +73,7 @@ root/
     ├── publication_draft/   (placeholder)
     ├── figures/
     └── slides/
-
-
-
+```
 
 Each notebook maps to one layer of the system architecture:  
 **Static Segmentation → Semi-Supervision → KPI/Optimization.**
