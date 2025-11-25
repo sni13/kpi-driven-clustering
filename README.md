@@ -1,44 +1,21 @@
-# KPI-Driven Clustering & Tier Optimization
-
-This repository contains an end-to-end workflow for **customer segmentation and tier assignment**, combining classical clustering methods (Ward, KMeans) with **KPI-optimized policies** (SFI, PI, revenue). The project explores how unsupervised learning can be aligned with business objectives to create stable, meaningful tiers.
-
----
-
-## 🔍 Project Overview
-
-Traditional clustering methods (e.g., KMeans, Ward) optimize for geometric separation, **not business KPIs**.  
-This repo investigates:
-
-1. **Baseline clustering**
-   - Ward hierarchical clustering
-   - KMeans / KMeans++
-   - Optional: HDBSCAN for density-based comparison
-
-2. **Limitations of pure clustering**
-   - Skewed tier distributions
-   - High-revenue clusters do not always maximize PI
-   - Silhouette vs KPI trade-offs
-   - Instability when adjusting feature weights
-
-3. **KPI-Driven Tier Assignment (Policy Layer)**
-   Instead of forcing clustering to satisfy KPIs, we introduce a **policy layer** that reassigns tiers based on:
-   - SFI (Strategic Focus Index)
-   - PI (Performance Index)
-   - Revenue contribution
-   - Guardrails on TPA and tier size
+# Architecting the Next-Generation Customer Tiering System  
+### A KPI-Driven, Data-Integrated Architecture for Customer Tiering  
+_Fusing Statistical Clustering, Semi-Supervision, and Policy-Aligned Optimization_
 
 ---
 
-## 🛠️ Features
+## 📌 Overview  
 
-- Ward K=3/4/5 clustering experiments  
-- Silhouette analysis & stability diagnostics  
-- KPI scoring model (Policy v2)  
-- Automatic tier distribution with constraints  
-- Feature engineering for PI, revenue, and cluster diagnostics  
-- (Optional) HDBSCAN tests for irregular density  
+This repository contains the full codebase and documentation for our UCLA Anderson MSBA x Microsoft Capstone project.  
+We designed a modern, data-driven customer tiering system that unifies **static segmentation**, **semi-supervised signals**, and **KPI-driven strategic design** to replace traditional heuristic-based market tiers.
+
+Our objective was to build a segmentation architecture that is:
+- **Statistically principled**  
+- **Business-aligned**  
+- **Operationally deployable**  
+- **Transparent and reproducible**
 
 ---
 
-## 📁 Repository Structure
+## 📂 Repository Structure  
 
