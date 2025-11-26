@@ -75,7 +75,7 @@ root/
     ├── publication_draft/     # Placeholder for final paper
     ├── figures/
     └── slides/
-
+```
 ---
 
 ## 📚 Future Publication  
