@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
 import io
@@ -21,6 +22,15 @@ random.seed(42)
 _TIER_RE = re.compile(r"^\s*Tier\s+([A-Z])\s*$")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],           # OR replace with your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],           # MUST include OPTIONS
+    allow_headers=["*"],
+)
+
 load_dotenv()
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
