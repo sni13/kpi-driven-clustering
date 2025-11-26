@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pandas
+numpy
+scipy
+openai
+psutil
+openpyxl
+matplotlib
+openpyxl
