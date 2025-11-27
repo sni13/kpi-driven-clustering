@@ -137,30 +137,7 @@ def calculate_pi_acct(df, weights):
 
 
 # =========================================================
-# 3. ASSIGN DIRECT TIERS
-# =========================================================
-'''
-def assign_direct_tiers(df):
-    df = df.copy()
-
-    tier_counts = df["MarketTier_FY26"].value_counts().sort_index()
-    df_sorted = df.sort_values("PI_acct", ascending=False).reset_index(drop=True)
-
-    new_tiers = []
-    for tier, count in tier_counts.items():
-        new_tiers += [tier] * count
-
-    df_sorted["new_Tier_Direct"] = new_tiers
-
-    df_final = df_sorted.set_index("ID")[["new_Tier_Direct"]]
-    df = df.merge(df_final, on="ID", how="left")
-
-    return df
-'''
-
-
-# =========================================================
-# 4. TIER DISTRIBUTION (fixed version)
+# 3. TIER DISTRIBUTION
 # =========================================================
 
 def calculate_tier_distribution(df):
@@ -190,7 +167,7 @@ def calculate_tier_distribution(df):
 
 
 # =========================================================
-# 5. TIER CONSTRAINT
+# 4. TIER CONSTRAINT
 # =========================================================
 
 def constrain_tier(orig, proposed):
@@ -613,7 +590,7 @@ def optimize_tiers_four_phase(
     return df
 
 # =========================================================
-# 6. LLM WEIGHT REQUEST
+# 5. LLM WEIGHT REQUEST
 # =========================================================
 
 class UserPrompt(BaseModel):
@@ -624,59 +601,108 @@ def get_llm_weights(user_prompt: str) -> dict:
     system_msg = """
     You are an expert in B2B segmentation and KPI modeling.
 
-    The user will describe how they want to adjust PI weights or how they want
-    the segmentation process to behave.
+    The user will describe how they want to the segmentation process to behave
+    and your job is to infer their language and give weights accordingly.
 
-    Your job is to output ONLY a JSON object in this format:
+    You MUST return a JSON object with EXACTLY these fields:
 
     {
-      "w_runway": <float>,
-      "w_growth": <float>,
-      "w_geo": <float>,
-      "w_cat": <float>,
-      "use_kpi_optimizer": <true or false>
+    "w_runway": <float>,
+    "w_growth": <float>,
+    "w_geo": <float>,
+    "w_cat": <float>,
+    "run_mode": "<none | hybrid | kpi>",
+    "response_message": "<string>"
     }
 
     RULES:
+    1. If the user is greeting, chatting, or asking general questions:
+        run_mode = "none"
+        response_message = a helpful conversational reply
+        Weights must still be valid numbers that sum to 1.0.
 
-    (1) Weight rules:
-        - The four weights must sum to 1.0.
-        - Each weight must be between 0 and 1.
-        - These weights reflect the user's preference for scoring (runway/growth/geo/category).
+    2. If the user expresses tiering intent, but does NOT mention KPI:
+        run_mode = "hybrid"
 
-    (2) KPI Optimization Intent:
-        Set "use_kpi_optimizer": true ONLY if the user explicitly expresses intent to:
-        - "maximize KPIs"
-        - "optimize KPIs"
-        - "optimize tiers"
-        - "maximize score"
-        - "improve tiers using KPI"
-        - "run the optimizer"
-        - "4-phase" or "four phase"
-        - "KPI-based segmentation"
+    3. If the user explicitly mentions KPI ("use KPI", "prioritize KPI", etc.):
+        run_mode = "kpi"
 
-        Otherwise, default to:
-        "use_kpi_optimizer": false
-
-    (3) Output must be STRICT JSON.
-    No comments. No extra text. No explanation.
+    4. The JSON MUST be strictly valid. No extra text or explanation.
     """
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
+        temperature=0.0,
         messages=[
             {"role": "system", "content": system_msg},
-            {"role": "user",   "content": user_prompt}
+            {"role": "user", "content": user_prompt}
         ]
     )
 
     raw = response.choices[0].message.content.strip()
-    return json.loads(raw)
+
+    # ---------------------------------------
+    # Try to parse JSON
+    # ---------------------------------------
+    try:
+        parsed = json.loads(raw)
+    except:
+        print("❌ JSON parsing failed! Raw LLM output:")
+        print(raw)
+
+        # Fallback weights you requested
+        return {
+            "w_runway": 0.40,
+            "w_growth": 0.30,
+            "w_geo":    0.15,
+            "w_cat":    0.15,
+            "run_mode": "none",
+            "response_message": "Sorry, I didn’t understand that. Please rephrase."
+        }
+
+    # ---------------------------------------
+    # Ensure all keys exist
+    # ---------------------------------------
+    required = ["w_runway", "w_growth", "w_geo", "w_cat",
+                "run_mode", "response_message"]
+
+    for k in required:
+        if k not in parsed:
+            # Fill missing weights with your fallback
+            if k.startswith("w_"):
+                parsed[k] = {"w_runway": 0.40,
+                             "w_growth": 0.30,
+                             "w_geo": 0.15,
+                             "w_cat": 0.15}[k]
+            elif k == "run_mode":
+                parsed[k] = "none"
+            else:
+                parsed[k] = ""
+
+    # ---------------------------------------
+    # Normalize weights (guarantee sum = 1)
+    # ---------------------------------------
+    w = [parsed["w_runway"], parsed["w_growth"], parsed["w_geo"], parsed["w_cat"]]
+    total = sum(w)
+
+    if total > 0:
+        parsed["w_runway"] = w[0] / total
+        parsed["w_growth"] = w[1] / total
+        parsed["w_geo"]    = w[2] / total
+        parsed["w_cat"]    = w[3] / total
+    else:
+        # fallback normalization
+        parsed["w_runway"] = 0.40
+        parsed["w_growth"] = 0.30
+        parsed["w_geo"]    = 0.15
+        parsed["w_cat"]    = 0.15
+
+    return parsed
 
 
 
 # =========================================================
-# 7. WEBHOOK — CALLS LLM + FEEDS INTO PI CALCULATION
+# 6. WEBHOOK — CALLS LLM + FEEDS INTO PI CALCULATION
 # =========================================================
 
 @app.post("/get_weights")
@@ -687,19 +713,24 @@ def webhook(req: UserPrompt):
     print("💾 Before endpoint work (MB):", process.memory_info().rss / (1024 * 1024))
 
     # ======================================================
-    # Create fresh working copies
-    # ======================================================
-    df = ContosoRevData.copy(deep=True)
-    tam = TAM.copy(deep=True)
-
-    # ======================================================
     # 1. LLM → weights + segmentation choice
     # ======================================================
     weights_obj = get_llm_weights(req.prompt)
     print("\n⭐ RECEIVED FROM LLM ⭐")
     print(weights_obj)
 
-    use_kpi_method = bool(weights_obj.get("use_kpi_optimizer", False))
+    run_mode = weights_obj.get("run_mode", "none")
+    user_reply = weights_obj.get("response_message", "")
+
+    if run_mode == "none":
+        print("💬 Conversation mode — no clustering executed.")
+        return {"message": user_reply}
+    
+    # ======================================================
+    # Create fresh working copies
+    # ======================================================
+    df = ContosoRevData.copy(deep=True)
+    tam = TAM.copy(deep=True)
 
     # ======================================================
     # 2. Feature Engineering
@@ -718,7 +749,7 @@ def webhook(req: UserPrompt):
     # ------------------------------------------------------
     # DEFAULT = HYBRID = 4-PHASE OPTIMIZER
     # ------------------------------------------------------
-    if not use_kpi_method:
+    if run_mode == "hybrid":
         print("🔵 Using HYBRID segmentation (DEFAULT: 4-phase optimizer).")
 
         df = optimize_tiers_four_phase(
@@ -734,8 +765,8 @@ def webhook(req: UserPrompt):
     # ------------------------------------------------------
     # KPI METHOD (OLD PI-BASED)
     # ------------------------------------------------------
-    else:
-        print("🟣 Using KPI-based segmentation (OLD PI method).")
+    elif run_mode == "kpi":
+        print("🟣 Using KPI-based segmentation.")
 
         # Rank by PI respecting original tier counts
         df = calculate_tier_distribution(df)
