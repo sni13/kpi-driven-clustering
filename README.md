@@ -1,9 +1,8 @@
 # Architecting the Next-Generation Customer Tiering System  
-### A KPI-Driven, Data-Integrated Architecture for Customer Tiering  
-_Fusing Statistical Clustering, Semi-Supervision, and Policy-Aligned Optimization_
+### A KPI-Driven, Data-Integrated Architecture  
+_Fusing Statistical Clustering • Semi-Supervision • Policy-Aligned Optimization_
 
 ---
-
 
 ## 📘 Project Overview  
 
@@ -21,27 +20,6 @@ The resulting framework is designed to be **principled, business-aligned, and op
 
 ---
 
-## 👥 Authors  
-
-**UCLA Anderson MSBA — Class of 2025**
-
-- Sailing Ni  
-- Joy Yu  
-- Peng Yang  
-- Richard Sie  
-- Yifei Wang
-
-**Prepared for:**  
-Microsoft MCAPS AI Transformation Group  
-
-**Mentors:**  
-Juhi Singh  
-Bonnie Ao  
-
----
-
-
-
 ## ⚠️ Data Disclaimer  
 
 The dataset used in this repository is a **hypothesized dataset created for academic experimentation and research purposes only**.  
@@ -49,11 +27,28 @@ It does **not** represent real Microsoft customer data and contains no actual cu
 
 ---
 
-## 📚 Future Publication  
+## 👥 Authors & Mentors  
 
-A full written publication and technical report will be added here upon completion:  
+**UCLA Anderson MSBA — Class of 2025**
 
-**_→ [Publication Link — Coming Soon]_**
+- Sailing Ni (sailing.ni.2025@ucla.edu)  
+- Joy Yu (joy.yu.2025@anderson.ucla.edu)  
+- Peng Yang  (peng.yang.2025@anderson.ucla.edu)  
+- Richard Sie (richard.sie.2025@anderson.ucla.edu)  
+- Yifei Wang (yifei.wang.2025@anderson.ucla.edu)
+
+**Prepared for:**  
+**Microsoft MCAPS AI Transformation**
+
+**Mentors:**  
+Juhi Singh — juhisingh@microsoft.com  
+Bonnie Ao — ziqiaoao@microsoft.com  
+
+---
+
+## 🧩 System Architecture  
+
+<img src="docs/solution_architecture.png" width="850">
 
 ---
 
@@ -68,17 +63,40 @@ root/
 ├── act3_dynamic_tiering.ipynb
 │   └── KPI-driven ranking (Policy v2) & optional optimization
 ├── UCLA_Microsoft_Data.xlsx
-│   └── Hypothesized dataset for academic research
+│   └── Hypothesized dataset for academic research  
+├── llm/
+│   ├── llm.py                 # LLM orchestrator logic
+│   ├── render.yaml            # Deployment config (Azure/Render)
+│   ├── requirements.txt       # Python dependencies
+│   ├── start.sh               # Entry point script
+│   ├── README.md              # LLM usage & instructions
+│   └── __pycache__/           # Auto-generated cache
 └── docs/
-    ├── publication_draft/   (placeholder)
+    ├── publication_draft/     # Placeholder for final paper
     ├── figures/
     └── slides/
 ```
+---
 
-Each notebook maps to one layer of the system architecture:  
-**Static Segmentation → Semi-Supervision → KPI/Optimization.**
+## 📚 Future Publication  
+
+A full written publication and technical report will be added here upon completion:  
+
+**_→ [Publication Link — Coming Soon]_**
 
 ---
+
+## 📊 Key KPIs  
+
+Our KPI suite ensures that segmentation is both data-valid and business-actionable:
+
+- **TPA — Tier Potential Alignment**  
+- **TCI_PI / TCI_REV — Tier Compactness Index**  
+- **SFI — Strategic Focus Index**  
+
+
+---
+
 
 ## 🧠 Methodology Summary  
 
@@ -96,29 +114,13 @@ Each notebook maps to one layer of the system architecture:
 - Implemented Policy v2 (PI × Revenue weighted)  
 - Balanced statistical purity with real-world business needs  
 - Designed lightweight resource allocation logic
-
+- 
 ---
 
-## 📊 Key KPIs  
-
-Our KPI suite ensures that segmentation is both data-valid and business-actionable:
-
-- **TPA — Tier Potential Alignment**  
-- **TCI_PI / TCI_REV — Tier Compactness Index**  
-- **SFI — Strategic Focus Index**  
-
-
-
----
 
 ## 📄 License  
 
 This repository is intended for academic, educational, and research use only.  
 No real customer or proprietary Microsoft data is included.
 
----
 
-## 🏢 Contact  
-
-For questions or collaboration:  
-**sailing13@ucla.edu**
