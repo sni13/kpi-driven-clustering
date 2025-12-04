@@ -22,14 +22,14 @@ The resulting framework is designed to be **principled, business-aligned, and op
 
 🔗 Relevant Links
 
-Interactive LLM Agent Demo:
-👉 https://contoso-tier-guide.lovable.app/
+👉 Interactive LLM Agent Demo:
+https://contoso-tier-guide.lovable.app/
 
-Full Codebase, Notebooks, and Publication Draft:
-👉 https://github.com/sni13/kpi-driven-clustering/
+👉 Full Codebase, Notebooks, and Publication Draft:
+https://github.com/sni13/kpi-driven-clustering/
 
-Microsoft Tech Community Publication:
-👉 https://techcommunity.microsoft.com/blog/analyticsonazure/architecting-the-next-generation-customer-tiering-system/4475326
+👉 Microsoft Tech Community Publication:
+https://techcommunity.microsoft.com/blog/analyticsonazure/architecting-the-next-generation-customer-tiering-system/4475326
 
 
 ---
