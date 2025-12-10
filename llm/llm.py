@@ -628,6 +628,47 @@ def get_llm_weights(user_prompt: str, history: list[dict] | None = None) -> dict
       "response_message": "<string>"
     }
 
+    You must map user language to the following internal KPI weights:
+
+    - w_runway:
+      Represents FUTURE REVENUE POTENTIAL or UPSIDE.
+      This includes phrases like:
+        "runway"
+        "revenue potential"
+        "future revenue"
+        "upside"
+        "headroom"
+        "expansion potential"
+        "remaining opportunity"
+    
+    - w_growth:
+      Represents HISTORICAL OR EXPECTED GROWTH.
+      This includes phrases like:
+        "growth rate"
+        "CAGR"
+        "fast growing"
+        "accelerating accounts"
+    
+    - w_geo:
+      Represents GEOGRAPHIC STRATEGY OR LOCATION-BASED SIGNALS.
+      This includes phrases like:
+        "geography"
+        "region"
+        "location"
+        "EMEA"
+        "APAC"
+        "geographic diversification"
+    
+    - w_cat:
+      Represents INDUSTRY OR CATEGORY SIGNALS.
+      This includes phrases like:
+        "industry"
+        "vertical"
+        "category"
+        "sector focus"
+    
+    When assigning weights, interpret the user's language using these definitions.
+
     - You will receive the last few user/assistant messages as history.
     - You MUST treat that history as real memory.
     - If the user references something from earlier (e.g., “use the same weights as before”, 
