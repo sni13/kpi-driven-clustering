@@ -600,34 +600,53 @@ class UserPrompt(BaseModel):
 def get_llm_weights(user_prompt: str) -> dict:
     system_msg = """
     You are an expert in B2B segmentation and KPI modeling.
-
-    The user will describe how they want to the segmentation process to behave
-    and your job is to infer their language and give weights accordingly.
-
+    
+    Your role is to interpret the user's intent about segmentation, determine whether they
+    want hybrid segmentation or KPI-driven segmentation, and assign appropriate KPI weights.
+    
     You MUST return a JSON object with EXACTLY these fields:
-
+    
     {
-    "w_runway": <float>,
-    "w_growth": <float>,
-    "w_geo": <float>,
-    "w_cat": <float>,
-    "run_mode": "<none | hybrid | kpi>",
-    "response_message": "<string>"
+      "w_runway": <float>,
+      "w_growth": <float>,
+      "w_geo": <float>,
+      "w_cat": <float>,
+      "run_mode": "<none | hybrid | kpi>",
+      "response_message": "<string>"
     }
-
-    RULES:
-    1. If the user is greeting, chatting, or asking general questions:
+    
+    ------------------------------------------------------------
+    INTENT CLASSIFICATION RULES
+    ------------------------------------------------------------
+    
+    1. GENERAL CONVERSATION (No segmentation intent)
+    - If the user is greeting, chatting, or asking non-segmentation questions:
         run_mode = "none"
-        response_message = a helpful conversational reply
+        response_message = a normal helpful reply
         Weights must still be valid numbers that sum to 1.0.
-
-    2. If the user expresses tiering intent, but does NOT mention KPI:
+    
+    2. HYBRID SEGMENTATION (Default)
+    - If the user expresses tiering or segmentation intent but does NOT mention KPI explicitly:
         run_mode = "hybrid"
-
-    3. If the user explicitly mentions KPI ("use KPI", "prioritize KPI", etc.):
-        run_mode = "kpi"
-
-    4. The JSON MUST be strictly valid. No extra text or explanation.
+    
+    3. KPI-BASED SEGMENTATION (STRICT REQUIREMENT)
+    - The user MUST explicitly and literally mention the letters “KPI”.
+    - Valid triggers include:
+          "optimize KPI"
+          "maximize KPI"
+          "use KPI"
+          "prioritize KPI"
+    - If “KPI” is NOT explicitly mentioned, do NOT use run_mode = "kpi".
+    - Words like “prioritize”, “optimize”, “improve”, “weight”, or “focus on” by themselves 
+      are NOT triggers.
+      Examples of NON-triggers:
+          "prioritize geolocation"
+          "optimize growth"
+          "focus on revenue potential"
+    
+    4. JSON STRICTNESS
+    - The JSON MUST be strictly valid.
+    - No additional commentary, no explanation outside the JSON object.
     """
 
     response = client.chat.completions.create(
@@ -795,11 +814,23 @@ def webhook(req: UserPrompt):
 
     filename = f"pi_output_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
-    return StreamingResponse(
-        stream,
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+    weights_metadata = {
+    "run_mode": run_mode,
+    "w_runway": round(weights_obj["w_runway"], 4),
+    "w_growth": round(weights_obj["w_growth"], 4),
+    "w_geo": round(weights_obj["w_geo"], 4),
+    "w_cat": round(weights_obj["w_cat"], 4)
+}
+
+return StreamingResponse(
+    stream,
+    media_type="text/csv",
+    headers={
+        "Content-Disposition": f"attachment; filename={filename}",
+        "X-Run-Mode": run_mode,
+        "X-KPI-Weights": json.dumps(weights_metadata)
+    }
+)
 
 '''
 uvicorn llm:app --reload --port 8000
