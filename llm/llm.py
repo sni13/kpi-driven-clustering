@@ -302,7 +302,8 @@ def pretty_print(phase, it, score, k):
         f"TPA={k['TPA']:>5.3f} | "
         f"TCI_PI={k['TCI_PI']:>5.3f} | "
         f"TCI_REV={k['TCI_REV']:>5.3f} | "
-        f"SFI={k['SFI']:>5.3f}"
+        f"SFI={k['SFI']:>5.3f}",
+        flush=true
     )
 
 
@@ -352,7 +353,7 @@ def optimize_tiers_four_phase(
         rev_col="TotalRevenue_FY26",
         new_col="ImprovedTier",
 
-        max_iter_each_phase=20,
+        max_iter_each_phase=2000,
         plateau_limit=500,
 
         pool_k=10,
