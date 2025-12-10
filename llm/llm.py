@@ -596,8 +596,16 @@ def optimize_tiers_four_phase(
 class UserPrompt(BaseModel):
     prompt: str
 
+class ChatTurn(BaseModel):
+    role: str
+    content: str
 
-def get_llm_weights(user_prompt: str) -> dict:
+class UserPromptWithHistory(BaseModel):
+    prompt: str
+    history: list[ChatTurn] | None = None
+
+
+def get_llm_weights(user_prompt: str, history: list[dict] | None = None) -> dict:
     system_msg = """
     You are an expert in B2B segmentation and KPI modeling.
     
@@ -614,7 +622,16 @@ def get_llm_weights(user_prompt: str) -> dict:
       "run_mode": "<none | hybrid | kpi>",
       "response_message": "<string>"
     }
+
+    - You will receive the last few user/assistant messages as history.
+    - You MUST treat that history as real memory.
+    - If the user references something from earlier (e.g., “use the same weights as before”, 
+      “increase geo from last time”, “run the same method again”), you MUST use the past information.
+    - If the user's intent is unclear, you MUST ask a clarifying question inside 
+      response_message while still outputting valid weights (weights must always sum to 1).
+    - You may refer to context in response_message but NEVER include context in JSON.
     
+    You MUST still obey all intent classification rules below.
     ------------------------------------------------------------
     INTENT CLASSIFICATION RULES
     ------------------------------------------------------------
@@ -649,27 +666,32 @@ def get_llm_weights(user_prompt: str) -> dict:
     - No additional commentary, no explanation outside the JSON object.
     """
 
+    messages = [{"role": "system", "content": system_msg}]
+
+    if history:
+        for turn in history[-5:]:
+            if turn["role"] in ("user", "assistant"):
+                messages.append({
+                    "role": turn["role"],
+                    "content": turn["content"]
+                })
+
+    messages.append({"role": "user", "content": user_prompt})
+
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         temperature=0.0,
-        messages=[
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": user_prompt}
-        ]
+        messages=messages
     )
 
     raw = response.choices[0].message.content.strip()
 
-    # ---------------------------------------
-    # Try to parse JSON
-    # ---------------------------------------
+    # --- everything below stays exactly the same ---
     try:
         parsed = json.loads(raw)
     except:
         print("❌ JSON parsing failed! Raw LLM output:")
         print(raw)
-
-        # Fallback weights you requested
         return {
             "w_runway": 0.40,
             "w_growth": 0.30,
@@ -679,15 +701,11 @@ def get_llm_weights(user_prompt: str) -> dict:
             "response_message": "Sorry, I didn’t understand that. Please rephrase."
         }
 
-    # ---------------------------------------
-    # Ensure all keys exist
-    # ---------------------------------------
     required = ["w_runway", "w_growth", "w_geo", "w_cat",
                 "run_mode", "response_message"]
 
     for k in required:
         if k not in parsed:
-            # Fill missing weights with your fallback
             if k.startswith("w_"):
                 parsed[k] = {"w_runway": 0.40,
                              "w_growth": 0.30,
@@ -698,9 +716,6 @@ def get_llm_weights(user_prompt: str) -> dict:
             else:
                 parsed[k] = ""
 
-    # ---------------------------------------
-    # Normalize weights (guarantee sum = 1)
-    # ---------------------------------------
     w = [parsed["w_runway"], parsed["w_growth"], parsed["w_geo"], parsed["w_cat"]]
     total = sum(w)
 
@@ -710,7 +725,6 @@ def get_llm_weights(user_prompt: str) -> dict:
         parsed["w_geo"]    = w[2] / total
         parsed["w_cat"]    = w[3] / total
     else:
-        # fallback normalization
         parsed["w_runway"] = 0.40
         parsed["w_growth"] = 0.30
         parsed["w_geo"]    = 0.15
@@ -720,12 +734,13 @@ def get_llm_weights(user_prompt: str) -> dict:
 
 
 
+
 # =========================================================
 # 6. WEBHOOK — CALLS LLM + FEEDS INTO PI CALCULATION
 # =========================================================
 
 @app.post("/get_weights")
-def webhook(req: UserPrompt):
+def webhook(req: UserPromptWithHistory):
     global ContosoRevData, TAM, FortuneGlobal2000
 
     process = psutil.Process(os.getpid())
@@ -734,7 +749,9 @@ def webhook(req: UserPrompt):
     # ======================================================
     # 1. LLM → weights + segmentation choice
     # ======================================================
-    weights_obj = get_llm_weights(req.prompt)
+    weights_obj = get_llm_weights(
+    user_prompt=req.prompt,
+    history=[h.dict() for h in req.history] if req.history else None)
     print("\n⭐ RECEIVED FROM LLM ⭐")
     print(weights_obj)
 
@@ -815,22 +832,22 @@ def webhook(req: UserPrompt):
     filename = f"pi_output_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
     weights_metadata = {
-    "run_mode": run_mode,
-    "w_runway": round(weights_obj["w_runway"], 4),
-    "w_growth": round(weights_obj["w_growth"], 4),
-    "w_geo": round(weights_obj["w_geo"], 4),
-    "w_cat": round(weights_obj["w_cat"], 4)
-}
-
-return StreamingResponse(
-    stream,
-    media_type="text/csv",
-    headers={
-        "Content-Disposition": f"attachment; filename={filename}",
-        "X-Run-Mode": run_mode,
-        "X-KPI-Weights": json.dumps(weights_metadata)
+        "run_mode": run_mode,
+        "w_runway": round(weights_obj["w_runway"], 4),
+        "w_growth": round(weights_obj["w_growth"], 4),
+        "w_geo": round(weights_obj["w_geo"], 4),
+        "w_cat": round(weights_obj["w_cat"], 4)
     }
-)
+    
+    return StreamingResponse(
+        stream,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "X-Run-Mode": run_mode,
+            "X-KPI-Weights": json.dumps(weights_metadata)
+        }
+    )
 
 '''
 uvicorn llm:app --reload --port 8000
