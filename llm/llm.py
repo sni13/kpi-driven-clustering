@@ -303,7 +303,7 @@ def pretty_print(phase, it, score, k):
         f"TCI_PI={k['TCI_PI']:>5.3f} | "
         f"TCI_REV={k['TCI_REV']:>5.3f} | "
         f"SFI={k['SFI']:>5.3f}",
-        flush=true
+        flush=True
     )
 
 
