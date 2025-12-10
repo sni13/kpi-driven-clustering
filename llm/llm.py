@@ -352,7 +352,7 @@ def optimize_tiers_four_phase(
         rev_col="TotalRevenue_FY26",
         new_col="ImprovedTier",
 
-        max_iter_each_phase=2000,
+        max_iter_each_phase=20,
         plateau_limit=500,
 
         pool_k=10,
