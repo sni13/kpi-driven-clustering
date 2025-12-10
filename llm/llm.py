@@ -664,6 +664,8 @@ def get_llm_weights(user_prompt: str, history: list[dict] | None = None) -> dict
     4. JSON STRICTNESS
     - The JSON MUST be strictly valid.
     - No additional commentary, no explanation outside the JSON object.
+    - EVEN for general conversation, you MUST still return valid JSON using run_mode="none"
+      and place the conversational reply inside response_message.
     """
 
     messages = [{"role": "system", "content": system_msg}]
