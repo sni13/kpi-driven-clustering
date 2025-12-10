@@ -353,11 +353,11 @@ def optimize_tiers_four_phase(
         rev_col="TotalRevenue_FY26",
         new_col="ImprovedTier",
 
-        max_iter_each_phase=2000,
-        plateau_limit=500,
+        max_iter_each_phase=1000,
+        plateau_limit=250,
 
         pool_k=10,
-        print_every=300
+        print_every=150
     ):
 
     df = df.copy()
