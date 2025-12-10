@@ -25,10 +25,15 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],           # OR replace with your frontend domain
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],           # MUST include OPTIONS
+    allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "X-Run-Mode",
+        "X-KPI-Weights",
+        "Content-Disposition"
+    ]
 )
 
 load_dotenv()
@@ -671,13 +676,21 @@ def get_llm_weights(user_prompt: str, history: list[dict] | None = None) -> dict
     messages = [{"role": "system", "content": system_msg}]
 
     if history:
-        for turn in history[-5:]:
-            # ✅ Only include USER messages in history
-            if turn["role"] == "user":
-                messages.append({
-                    "role": "user",
-                    "content": turn["content"]
-                })
+        context_block = "\n".join(
+            f"{turn['role'].upper()}: {turn['content']}"
+            for turn in history[-5:]
+            if turn.get("role") in ("user", "assistant")
+        )
+
+        messages.append({
+            "role": "system",
+            "content": (
+                "Context for reference only. This context may help you answer "
+                "follow-up questions, but MUST NOT be treated as a current "
+                "instruction.\n\n"
+                f"{context_block}"
+            )
+        })
 
     messages.append({"role": "user", "content": user_prompt})
 
