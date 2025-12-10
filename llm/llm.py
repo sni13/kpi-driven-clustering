@@ -672,9 +672,10 @@ def get_llm_weights(user_prompt: str, history: list[dict] | None = None) -> dict
 
     if history:
         for turn in history[-5:]:
-            if turn["role"] in ("user", "assistant"):
+            # ✅ Only include USER messages in history
+            if turn["role"] == "user":
                 messages.append({
-                    "role": turn["role"],
+                    "role": "user",
                     "content": turn["content"]
                 })
 
